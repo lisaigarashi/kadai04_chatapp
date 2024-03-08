@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <title>Firebase_version9_RealtimeDB(G'sACADEMY初学者用サンプル)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Let's chat!</h1>
+    </header>
+
+    <!-- コンテンツ表示画面 -->
+    <!-- テクストエリアに打ち込まれた内容がデータベースに保存され、output keyで取得し表示する -->
+
+    <div>
+        <!-- 名前を入力後、名前の表示 -->
+        <div id="name"> Name:<input type="text" id="uname"> </div>
+        <div>
+            <!-- 会話の内容 -->
+            <textarea id="text" ></textarea>
+            <!-- <textarea id="text" cols="30" rows="10"></textarea> -->
+            <!-- 入力した時刻の表示 -->
+           <div id="time"></div>
+            <!-- 高さ300pxで固定。300px超えたらスクロール表示に切り替わる -->
+            <button id="send">送信</button>
+        </div>
+        <!-- 長くなったら自動的に調整するようにcssで高さなどを調整 -->
+        <div id="output" style="overflow:auto; height: 300px;"></div>
+    </div>
+    <footer>
+        <p>©Let`s chat ltd.2024</p>
+    </footer>
+    <!--/ コンテンツ表示画面 -->
+
+
+
+    <!-- JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- JQuery -->
+
+
+    <!--** 以下Firebase **-->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        //以下を使う宣言（verが変わっているから）必要。以下の関数以外は使用不可
+        import { getDatabase, ref, push, set, update, onChildAdded, remove, onChildChanged, onChildRemoved }
+            from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // オブジェクトリテラルの生成（firebase設定情報を含んでいる）
+     // （keyと値のペアになっている）
+    //  firebaseApiからexport
+     import firebaseConfig from "./firebaseApikey.js";
+        console.log(firebaseConfig);
+
+        // Initialize Firebase
+        // 上記のfirebaseConfigに接続する
+        const app = initializeApp(firebaseConfig);
+
+        const db = getDatabase(app);
+        // Realtime DBに接続
+        const dbRef = ref(db, "chat");
+        // RealtimeDB内の"chat"を使う
+        // 現在日時を表示する
+        const nowTime=new Date();
+        // 西暦を取る
+        const nowYear=nowTime.getFullYear();
+        // 何月をとる(0～始まるので必ず+1をする)
+        const nowMonth=nowTime.getMonth()+1;
+    // 何日を取る
+        const nowDate=nowTime.getDate();
+        // 時間だけを取り出す
+        const nowHour=nowTime.getHours();
+        // 分だけ取り出す
+        const nowMin=nowTime.getMinutes();
+        // 秒だけを取り出す
+        // const nowSec=nowTime.getSeconds();
+
+        
+
+        const timemsg=`${nowYear}.${nowMonth}.${nowDate}.${nowHour}:${nowMin}`;
+
+
+
+        $("#time").html(timemsg);
+        // 送信ボタンをクリックすると入力したメッセージなどを
+        $("#send").on("click", function () {
+            // objectを作る
+            const msg = {
+                uname: $("#uname").val(),
+                text: $("#text").val(),
+                nowTime:timemsg,
+              
+                
+            }
+            // 作ったobjectをrealtimeDB内に格納していく
+            const newPostRef = push(dbRef);
+            // uniqueが生成され、chatの中に保存される
+            // unique keyにならないと上書きされていく
+            set(newPostRef, msg);
+            console.log(newPostRef, msg);
+
+
+        });
+        // データ受信:処理を記述
+        // onChildAdded()を使い送信してくるデータを監視
+        onChildAdded(dbRef, function (data) {
+            const msg = data.val();
+            // オブジェクト変数の取得しないと動かない
+            const key = data.key;
+            // ユニークキーの取得
+            // 削除する際に必須
+            let h = '<p id="' + key +'">';
+                // 時間の表示（本日の日付）
+           
+                h += '<span contentEditable="true" id="'+ key +'_update">' + msg.nowTime+ '</span>';
+                h+='<br>';
+                h +=msg.uname;
+            // msgからnameを取ってくる
+            // 改行
+            h+='<br>';
+            // 中に入っている要素が編集可能(contentEditable=true)であれば、更新して情報をtextとして取る
+            h += '<span contentEditable="true" id="'+ key +'_update">' + msg.text + '</span>';
+            
+            // msgからtextをとってくる
+            // 削除
+            h += '<span class="remove" data-key="'+ key +'">🚮</span>'
+            // 更新
+            h += '<span class="update" data-key="'+ key +'">🆙</span >'
+            h += '</p>';
+            $("#output").prepend(h);
+            // outputに上から順に入れていく（新しいものは下に入る仕組み）
+
+        });
+
+        // 削除イベント
+        $("#output").on("click",".remove",function(){
+            const key=$(this).attr("data-key");
+            // クリックされた要素からdata-key属性の値を取得（データベース内の識別子）
+            const remove_item=ref(db,"chat/"+key);
+            // 取得した上記のkeyを利用してfiredabase内のchatにある情報を削除
+            remove(remove_item);
+            // データ削除関数
+
+        });
+        // 削除処理がFirebase側で実行されたらイベント発生
+        onChildRemoved(dbRef,(data)=>{
+            $("#"+data.key).remove();
+            // chat内のhtmlに表示されていた内容を削除
+        
+        });
+        // 更新イベント
+        $("#output").on("click",".update",function(){
+            const key=$(this).attr("data-key");
+            update(ref(db,"chat/"+key),{
+                text:$("#"+key+'_update').html()
+            });
+        });
+        // 更新処理がFirebase側で実行されたらイベント発生
+        onChildChanged(dbRef,(data)=>{
+            $("#"+data.key+'_update').html(data.val().text);
+            $("#"+data.key+'_update').fadeOut(800).fadeIn(800);
+        });
+
+
+
+
+
+        
+
+    </script>
+
+
+
+
+
+
+
+
+
+
+
+</body>
+
+</html>

@@ -1,0 +1,57 @@
+body {
+    width: 100%;
+    padding: 0;
+    height: auto;
+    text-align: center;
+}
+
+#name {
+    text-align: center;
+    padding: 25px;
+
+}
+
+#text {
+    text-align: left;
+    padding: 10px;
+    width: 200px;
+    height: 150px;
+ font-family: Arial, Helvetica, sans-serif;
+}
+
+header {
+    text-align: center;
+}
+
+footer {
+    text-align: center;
+    padding: 30px;
+    height: 500px;
+    color: blue;
+     
+
+}
+#send{
+    color: #000;
+  background-color: #fff100;
+  border-bottom: 5px solid #ccc100;
+}
+#send:hover{
+    margin-top: 3px;
+    color: #000;
+    background:#fff20a;
+    border-bottom: 2px solid #ccc100;
+
+}
+.msg_bubble{
+    background-color: #f0f0f0; 
+    /* 吹き出しの背景色 */ 
+     border:1px solid #ccc; 
+     /* 枠線 */ 
+    padding:10px; /* テキストと枠線の間のスペース */
+    border-radius: 10px; /* 角を丸くする */
+}
+.message-text {
+    font-size: 14px; /* テキストのサイズ */
+    color: #333; /* テキストの色 */
+}
